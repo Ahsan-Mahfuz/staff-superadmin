@@ -50,6 +50,41 @@ const toNumber = (val) => {
 const amt = (n) => (Number(n) || 0).toFixed(2);
 const fmtDate = (d) => (d ? dayjs(d).format("DD MMM YYYY") : "N/A");
 
+// Travel time is stored by the app as free text ("2 hours 30 minutes",
+// "45 minutes", "1 hour", "0"), and occasionally as "HH:MM" from AI extraction.
+// Return the value in decimal hours so it can be summed.
+const travelHours = (val) => {
+  if (val === null || val === undefined) return 0;
+  const s = String(val).trim();
+  if (!s || s === "0") return 0;
+  const hm = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (hm) return parseInt(hm[1], 10) + parseInt(hm[2], 10) / 60;
+  const hMatch = s.match(/(\d+(?:\.\d+)?)\s*hour/i);
+  const mMatch = s.match(/(\d+)\s*min/i);
+  if (hMatch || mMatch) {
+    return (hMatch ? parseFloat(hMatch[1]) : 0) + (mMatch ? parseFloat(mMatch[1]) / 60 : 0);
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+};
+
+// Human-friendly hours → "Xh Ym".
+const fmtHours = (h) => {
+  const totalMin = Math.round((Number(h) || 0) * 60);
+  const hh = Math.floor(totalMin / 60);
+  const mm = totalMin % 60;
+  return mm ? `${hh}h ${mm}m` : `${hh}h`;
+};
+
+// The app has no dedicated "additional job number" field — it appends the value
+// to the additional-notes text as "Additional job reference: <ref>". Pull it back
+// out so the Productivity view can show it under Variations.
+const extractJobRef = (notes) => {
+  if (!notes) return null;
+  const m = String(notes).match(/Additional job reference:\s*(.+)/i);
+  return m ? m[1].trim() : null;
+};
+
 // Handles PDF uploads as a link, images inline.
 const FilePreview = ({ url, label }) => {
   if (!url) return <span className="text-gray-400 italic">No file uploaded.</span>;
@@ -115,7 +150,7 @@ const ReportDetail = ({ r }) => {
       <SectionTitle>Commercial</SectionTitle>
       <Row label="Approved Hours" value={r?.approvedHours} />
       <Row label="Actual Hours" value={r?.workedHours != null ? `${r.workedHours}h` : null} />
-      <Row label="Variations" value={r?.variations} block />
+      <Row label="Variations" value={r?.variations || extractJobRef(r?.addAdditionalNotes)} block />
       <Row label="Travel Time" value={r?.travelTime} />
       <Row label="Mileage Logged" value={r?.mileageLogged} />
       <Row label="Stay Away From Home" value={r?.stayAwayFromHome ? "Yes" : "No"} />
@@ -294,7 +329,20 @@ const Reports = () => {
         return `${(actual - approved).toFixed(2)}h`;
       },
     },
-    { title: "Variations", key: "variations", render: (_, r) => r?.variations || "—" },
+    { title: "Travel Time", key: "travelTime", render: (_, r) => (travelHours(r?.travelTime) ? fmtHours(travelHours(r?.travelTime)) : "—") },
+    {
+      // Additional job number the staff entered in the app (appended to notes).
+      title: "Variations",
+      key: "variations",
+      render: (_, r) => extractJobRef(r?.addAdditionalNotes) || r?.variations || "—",
+    },
+    {
+      title: "Work Completed",
+      key: "workCompleted",
+      render: (_, r) => (
+        <div className="max-w-xs whitespace-pre-wrap break-words">{r?.workDescription || "—"}</div>
+      ),
+    },
     { title: "Delays", key: "delays", render: (_, r) => r?.issueOrDelays || "—" },
     { title: "Delay Reasons", key: "delayReasons", render: (_, r) => r?.delayReasons || "—" },
     colView,
@@ -344,10 +392,13 @@ const Reports = () => {
     const map = new Map();
     rows.forEach((r) => {
       const id = r?.staffRef?.staffId || "N/A";
-      const cur = map.get(id) || { userId: id, trade: r?.staffRef?.designation || "N/A", reports: 0, hours: 0, overtime: 0, labour: 0 };
+      const cur = map.get(id) || { userId: id, trade: r?.staffRef?.designation || "N/A", reports: 0, hours: 0, overtime: 0, travel: 0, mileage: 0, expenses: 0, labour: 0 };
       cur.reports += 1;
       cur.hours += Number(r?.workedHours) || 0;
       cur.overtime += toNumber(r?.overtimeHours);
+      cur.travel += travelHours(r?.travelTime);
+      cur.mileage += toNumber(r?.mileageLogged);
+      cur.expenses += Number(r?.expenseTotal) || 0;
       cur.labour += Number(r?.labourCost) || 0;
       map.set(id, cur);
     });
@@ -361,6 +412,9 @@ const Reports = () => {
     { title: "Reports", dataIndex: "reports", key: "reports" },
     { title: "Total Hours", key: "hours", render: (_, r) => `${r.hours.toFixed(2)}h` },
     { title: "Overtime Hours", key: "ot", render: (_, r) => `${r.overtime.toFixed(2)}h` },
+    { title: "Total Travel Time", key: "travel", render: (_, r) => fmtHours(r.travel) },
+    { title: "Mileage Booked", key: "mileage", render: (_, r) => r.mileage.toFixed(2) },
+    { title: "Total Expenses", key: "expenses", render: (_, r) => amt(r.expenses) },
     { title: "Labour Cost", key: "labour", render: (_, r) => amt(r.labour) },
   ];
 

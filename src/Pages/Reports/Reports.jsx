@@ -152,6 +152,7 @@ const ReportDetail = ({ r }) => {
       <Row label="Actual Hours" value={r?.workedHours != null ? `${r.workedHours}h` : null} />
       <Row label="Variations" value={r?.variations || extractJobRef(r?.addAdditionalNotes)} block />
       <Row label="Travel Time" value={r?.travelTime} />
+      <Row label="Delay / Standing Time" value={r?.delayTime} />
       <Row label="Mileage Logged" value={r?.mileageLogged} />
       <Row label="Stay Away From Home" value={r?.stayAwayFromHome ? "Yes" : "No"} />
 
@@ -161,6 +162,8 @@ const ReportDetail = ({ r }) => {
       <Row label="Subsistence" value={amt(r?.expenseBreakdown?.subsistence)} />
       <Row label="Other" value={amt(r?.expenseBreakdown?.other)} />
       <Row label="Total Expenses" value={amt(r?.expenseTotal)} />
+      <Row label="Delay Cost (staff)" value={amt(r?.delayCost)} />
+      <Row label="Delay Chargeable (client)" value={amt(r?.delayChargeable)} />
       <Row label="Labour Cost" value={amt(r?.labourCost)} />
       <Row label="Invoice Cost" value={amt(r?.invoiceCost)} />
 
@@ -355,6 +358,9 @@ const Reports = () => {
     { title: "Subsistence", key: "subs", render: (_, r) => amt(r?.expenseBreakdown?.subsistence) },
     { title: "Other", key: "other", render: (_, r) => amt(r?.expenseBreakdown?.other) },
     { title: "Expenses Total", key: "total", render: (_, r) => amt(r?.expenseTotal) },
+    { title: "Delay Time", key: "delayTime", render: (_, r) => (travelHours(r?.delayTime) ? fmtHours(travelHours(r?.delayTime)) : "—") },
+    { title: "Delay Cost", key: "delayCost", render: (_, r) => amt(r?.delayCost) },
+    { title: "Delay Chargeable", key: "delayChargeable", render: (_, r) => amt(r?.delayChargeable) },
     { title: "Labour Cost", key: "labour", render: (_, r) => <strong>{amt(r?.labourCost)}</strong> },
     { title: "Invoice Cost", key: "invoice", render: (_, r) => <strong>{amt(r?.invoiceCost)}</strong> },
     colView,
@@ -392,11 +398,12 @@ const Reports = () => {
     const map = new Map();
     rows.forEach((r) => {
       const id = r?.staffRef?.staffId || "N/A";
-      const cur = map.get(id) || { userId: id, trade: r?.staffRef?.designation || "N/A", reports: 0, hours: 0, overtime: 0, travel: 0, mileage: 0, expenses: 0, labour: 0 };
+      const cur = map.get(id) || { userId: id, trade: r?.staffRef?.designation || "N/A", reports: 0, hours: 0, overtime: 0, travel: 0, delay: 0, mileage: 0, expenses: 0, labour: 0 };
       cur.reports += 1;
       cur.hours += Number(r?.workedHours) || 0;
       cur.overtime += toNumber(r?.overtimeHours);
       cur.travel += travelHours(r?.travelTime);
+      cur.delay += travelHours(r?.delayTime);
       cur.mileage += toNumber(r?.mileageLogged);
       cur.expenses += Number(r?.expenseTotal) || 0;
       cur.labour += Number(r?.labourCost) || 0;
@@ -413,6 +420,7 @@ const Reports = () => {
     { title: "Total Hours", key: "hours", render: (_, r) => `${r.hours.toFixed(2)}h` },
     { title: "Overtime Hours", key: "ot", render: (_, r) => `${r.overtime.toFixed(2)}h` },
     { title: "Total Travel Time", key: "travel", render: (_, r) => fmtHours(r.travel) },
+    { title: "Total Delay Time", key: "delay", render: (_, r) => fmtHours(r.delay) },
     { title: "Mileage Booked", key: "mileage", render: (_, r) => r.mileage.toFixed(2) },
     { title: "Total Expenses", key: "expenses", render: (_, r) => amt(r.expenses) },
     { title: "Labour Cost", key: "labour", render: (_, r) => amt(r.labour) },

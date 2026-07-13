@@ -353,6 +353,10 @@ const Reports = () => {
   const [clientId, setClientId] = useState();
   const [jobId, setJobId] = useState();
   const [dateRange, setDateRange] = useState(null);
+  // Quick period filter (brief §1: reports filterable Daily / Weekly / Monthly).
+  // Selecting a period sets the date range below; picking a custom range in the
+  // RangePicker flips this back to "custom" so the two never disagree.
+  const [period, setPeriod] = useState("all");
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -745,11 +749,28 @@ const Reports = () => {
     setPrimaryColor(cssPrimaryColor || "#3b19d5");
   }, []);
 
+  // Daily / Weekly / Monthly quick filter → sets the date range that the server
+  // already filters on. "all" clears it; any other value is a rolling window
+  // ending today (today, last 7 days, this month).
+  const applyPeriod = (value) => {
+    setPeriod(value);
+    if (value === "daily") {
+      setDateRange([dayjs().startOf("day"), dayjs().endOf("day")]);
+    } else if (value === "weekly") {
+      setDateRange([dayjs().startOf("week"), dayjs().endOf("day")]);
+    } else if (value === "monthly") {
+      setDateRange([dayjs().startOf("month"), dayjs().endOf("day")]);
+    } else {
+      setDateRange(null);
+    }
+  };
+
   const resetFilters = () => {
     setOwnerId(undefined);
     setClientId(undefined);
     setJobId(undefined);
     setDateRange(null);
+    setPeriod("all");
     setSearch("");
   };
 
@@ -797,7 +818,27 @@ const Reports = () => {
           style={{ minWidth: 180 }} value={clientId} onChange={setClientId} options={clientOptions} />
         <Select allowClear showSearch optionFilterProp="label" placeholder="Filter by Project"
           style={{ minWidth: 180 }} value={jobId} onChange={setJobId} options={projectOptions} />
-        <RangePicker value={dateRange} onChange={setDateRange} />
+        <Select
+          style={{ minWidth: 130 }}
+          value={period}
+          onChange={applyPeriod}
+          options={[
+            { value: "all", label: "All time" },
+            { value: "daily", label: "Daily" },
+            { value: "weekly", label: "Weekly" },
+            { value: "monthly", label: "Monthly" },
+            { value: "custom", label: "Custom range" },
+          ]}
+        />
+        <RangePicker
+          value={dateRange}
+          onChange={(v) => {
+            setDateRange(v);
+            // A manual range no longer matches a preset — mark it custom (or
+            // "all" when cleared) so the period dropdown stays truthful.
+            setPeriod(v && v[0] && v[1] ? "custom" : "all");
+          }}
+        />
         <Input allowClear placeholder="Search User ID / Role" style={{ width: 200 }}
           value={search} onChange={(e) => setSearch(e.target.value)} />
         <button onClick={resetFilters} className="px-3 py-1 border rounded text-sm">Reset</button>

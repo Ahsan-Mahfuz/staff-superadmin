@@ -25,6 +25,14 @@ const SeetingsApi = baseApi.injectEndpoints({
       }),
       providesTags: ["privacyData"],
     }),
+    // Public (no auth) — the super admin's own privacy policy, for the public
+    // legal page.
+    getPublicPrivacyData: builder.query({
+      query: () => ({
+        url: "/company/public/super-admin/privacy-policy",
+        method: "GET",
+      }),
+    }),
     updatePrivacyData: builder.mutation({
       query: (data) => ({
         url: "/company/update-privacy-policy",
@@ -40,6 +48,14 @@ const SeetingsApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       providesTags: ["termsData"],
+    }),
+    // Public (no auth) — the super admin's own terms & conditions, for the
+    // public legal page.
+    getPublicTermsData: builder.query({
+      query: () => ({
+        url: "/company/public/super-admin/terms-and-conditions",
+        method: "GET",
+      }),
     }),
     updateTermsData: builder.mutation({
       query: (data) => ({
@@ -88,8 +104,10 @@ export const {
   useGetAllAboutDataQuery,
   useUpdateABoutDataMutation,
   useGetAllPrivacyDataQuery,
+  useGetPublicPrivacyDataQuery,
   useUpdatePrivacyDataMutation,
   useGetAllTermsDataQuery,
+  useGetPublicTermsDataQuery,
   useUpdateTermsDataMutation,
   useGetAllContactDataQuery,
   useUpdateContactDataMutation,

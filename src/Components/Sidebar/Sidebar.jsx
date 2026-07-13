@@ -1,10 +1,22 @@
 /* eslint-disable react/prop-types */
 import { FiLogOut } from "react-icons/fi";
 import { GrNotes } from "react-icons/gr";
+import { MdPrivacyTip } from "react-icons/md";
+import { RiTerminalWindowLine } from "react-icons/ri";
 import { Link, useLocation } from "react-router-dom";
 
 const menuItems = [
   { icon: <GrNotes className="h-5 w-5" />, label: "Reports", link: "/" },
+  {
+    icon: <MdPrivacyTip className="h-5 w-5" />,
+    label: "Privacy Policy",
+    link: "/settings/privacy-policy",
+  },
+  {
+    icon: <RiTerminalWindowLine className="h-5 w-5" />,
+    label: "Terms & Condition",
+    link: "/settings/terms-condition",
+  },
 ];
 
 const Sidebar = ({ onClose = () => {} }) => {

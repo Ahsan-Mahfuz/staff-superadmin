@@ -24,10 +24,10 @@ const TermsCondition = () => {
     const data = { termsAndConditions: content };
     try {
       await updateTermsData(data).unwrap();
-      message.success("About section updated successfully!");
+      message.success("Terms & Conditions updated successfully!");
     } catch (error) {
       console.error(error);
-      message.error("Failed to update About section.");
+      message.error("Failed to update Terms & Conditions.");
     }
   };
 

@@ -24,10 +24,10 @@ const PrivacyPolicy = () => {
     const data = { privacyPolicy: content };
     try {
       await updatePrivacyData(data).unwrap();
-      message.success("About section updated successfully!");
+      message.success("Privacy Policy updated successfully!");
     } catch (error) {
       console.error(error);
-      message.error("Failed to update About section.");
+      message.error("Failed to update Privacy Policy.");
     }
   };
   return (

@@ -8,6 +8,10 @@ import ContinuePage from "../Pages/Auth/ContinuePage/ContinuePage";
 import AdminProfile from "../Pages/AdminProfile/AdminProfile";
 import SIgnUp from "../Pages/Auth/SignUp/SIgnUp";
 import Reports from "../Pages/Reports/Reports";
+import PublicPrivacyPolicy from "../Pages/Public/PublicPrivacyPolicy";
+import PublicTermsCondition from "../Pages/Public/PublicTermsCondition";
+import PrivacyPolicy from "../Pages/Settings/PrivacyPolicy/PrivacyPolicy";
+import TermsCondition from "../Pages/Settings/TermsCondition/TermsCondition";
 import PrivateRoute from "./PrivateRoute";
 export const router = createBrowserRouter([
   {
@@ -37,6 +41,14 @@ export const router = createBrowserRouter([
     element: <ContinuePage />,
   },
   {
+    path: "/public/privacy-policy",
+    element: <PublicPrivacyPolicy />,
+  },
+  {
+    path: "/public/terms-and-conditions",
+    element: <PublicTermsCondition />,
+  },
+  {
     element: <PrivateRoute />,
     children: [
       {
@@ -51,6 +63,14 @@ export const router = createBrowserRouter([
           {
             path: "/admin-profile",
             element: <AdminProfile />,
+          },
+          {
+            path: "/settings/privacy-policy",
+            element: <PrivacyPolicy />,
+          },
+          {
+            path: "/settings/terms-condition",
+            element: <TermsCondition />,
           },
         ],
       },

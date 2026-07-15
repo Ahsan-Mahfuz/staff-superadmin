@@ -222,6 +222,10 @@ const ProductivityDetail = ({ g }) => {
       <Row label="Date" value={fmtDate(g?.date)} />
       <Row label="Total Teams" value={g?.totalTeams} />
       <Row label="Total Hours" value={`${(g?.totalHours || 0).toFixed(2)}h`} />
+      <Row
+        label="Total Travel Time"
+        value={g?.totalTravelHours ? fmtHours(g.totalTravelHours) : "N/A"}
+      />
 
       <SectionTitle>Costs</SectionTitle>
       {/* Travel = staff mileage rate x total miles + total travel time x hourly rate */}
@@ -263,7 +267,6 @@ const CostSummary = ({ data, totals, dateRange }) => {
           <tr>
             <th style={th}>#</th>
             <th style={th}>Date</th>
-            <th style={th}>User ID</th>
             <th style={th}>Job No.</th>
             <th style={{ ...th, textAlign: "right" }}>Travel</th>
             <th style={{ ...th, textAlign: "right" }}>Accom.</th>
@@ -282,7 +285,6 @@ const CostSummary = ({ data, totals, dateRange }) => {
             <tr key={r._id || i}>
               <td style={td}>{i + 1}</td>
               <td style={tdL}>{fmtDate(r?.date)}</td>
-              <td style={tdL}>{r?.staffRef?.staffId || "N/A"}</td>
               <td style={tdL}>{r?.job?.jobNumber || r?.jobNumber || "N/A"}</td>
               <td style={td}>{amt(r?.expenseBreakdown?.travel)}</td>
               <td style={td}>{amt(r?.expenseBreakdown?.accommodation)}</td>
@@ -297,7 +299,7 @@ const CostSummary = ({ data, totals, dateRange }) => {
             </tr>
           ))}
           <tr style={{ fontWeight: "bold", background: "#fafafa" }}>
-            <td style={tdL} colSpan={4}>TOTAL ({data.length})</td>
+            <td style={tdL} colSpan={3}>TOTAL ({data.length})</td>
             <td style={td}>{amt(totals.travel)}</td>
             <td style={td}>{amt(totals.accommodation)}</td>
             <td style={td}>{amt(totals.subsistence)}</td>
@@ -482,6 +484,7 @@ const Reports = () => {
           date: r?.date,
           staffSet: new Set(),
           totalHours: 0,
+          totalTravelHours: 0,
           travel: 0,
           subsistence: 0,
           other: 0,
@@ -497,6 +500,7 @@ const Reports = () => {
         cur.staffSet.add(id)
       );
       cur.totalHours += Number(r?.workedHours) || 0;
+      cur.totalTravelHours += travelHours(r?.travelTime);
       cur.travel += travelCostForReport(r);
       cur.subsistence += Number(r?.staffRef?.additionalStopOutCost) || 0;
       cur.other += toNumber(r?.expenseBreakdown?.other);
@@ -525,6 +529,11 @@ const Reports = () => {
     colDate,
     { title: "Total Teams", key: "teams", render: (_, g) => g?.totalTeams ?? 0 },
     { title: "Total Hours", key: "hours", render: (_, g) => `${(g?.totalHours || 0).toFixed(2)}h` },
+    {
+      title: "Total Travel Time",
+      key: "travelTime",
+      render: (_, g) => (g?.totalTravelHours ? fmtHours(g.totalTravelHours) : "—"),
+    },
     { title: "Travel", key: "travel", render: (_, g) => amt(g?.travel) },
     { title: "Subsistence", key: "subs", render: (_, g) => amt(g?.subsistence) },
     { title: "Other", key: "other", render: (_, g) => amt(g?.other) },
